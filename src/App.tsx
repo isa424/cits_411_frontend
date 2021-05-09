@@ -1,5 +1,5 @@
-import React, { FC, FormEvent, useState, createRef, useRef, } from 'react';
-import axios, { CancelTokenSource } from "axios";
+import React, { FC, FormEvent, useState, createRef, useRef, useEffect, } from 'react';
+import axios, { CancelTokenSource } from 'axios';
 import classnames from 'classnames';
 import Modal from 'react-bootstrap/Modal';
 
@@ -10,13 +10,19 @@ interface IModalProps {
 	uploaded: boolean
 	procPercent: number
 	procced: boolean
+	filename: string
 }
-const MyModal: React.FC<IModalProps> = ({ open, handleClose, percent, uploaded, procPercent, procced }) => {
+
+const MyModal: React.FC<IModalProps> = (props) => {
+	const {open, handleClose, percent, uploaded, procPercent, procced, filename} = props;
+	const [url, setUrl] = useState(`http://localhost:3001/${filename}.mp4`);
+	const [audioUrl, setAudioUrl] = useState(`http://localhost:3001/${filename}.wav`);
+
 	return (
 		<Modal show={open} onHide={handleClose}>
 			<Modal.Header closeButton>
 				<Modal.Title>
-					{`Uploading File...`}
+					{`Uploading File`}
 				</Modal.Title>
 			</Modal.Header>
 
@@ -29,17 +35,17 @@ const MyModal: React.FC<IModalProps> = ({ open, handleClose, percent, uploaded, 
 						<div
 							className="progress-bar progress-bar-striped bg-success progress-bar-animated"
 							role="progressbar"
-							style={{ width: `${percent}%` }}
+							style={{width: `${percent}%`}}
 							aria-valuenow={percent}
 							aria-valuemin={0}
 							aria-valuemax={100}
 						/>
 					</div>
 					<span className={!uploaded ? 'd-none' : ''}>
-						<i className={classnames('fa fa-fa fa-check-circle ml-2 text-success')} />
+						<i className={classnames('fa fa-fa fa-check-circle ml-2 text-success')}/>
 					</span>
 					<span className={uploaded ? 'd-none' : ''}>
-						<i className={classnames('fa fa-fa fa-spinner fa-pulse ml-2')} />
+						<i className={classnames('fa fa-fa fa-spinner fa-pulse ml-2')}/>
 					</span>
 				</div>
 				<div className={'mt-4'}>
@@ -50,30 +56,41 @@ const MyModal: React.FC<IModalProps> = ({ open, handleClose, percent, uploaded, 
 						<div
 							className="progress-bar progress-bar-striped bg-warning progress-bar-animated"
 							role="progressbar"
-							style={{ width: `${procPercent}%` }}
+							style={{width: `${procPercent}%`}}
 							aria-valuenow={procPercent}
 							aria-valuemin={0}
 							aria-valuemax={100}
 						/>
 					</div>
 					<span className={!procced ? 'd-none' : ''}>
-						<i className={classnames('fa fa-fa fa-check-circle ml-2 text-success')} />
+						<i className={classnames('fa fa-fa fa-check-circle ml-2 text-success')}/>
 					</span>
 					<span className={procced ? 'd-none' : ''}>
-						<i className={classnames('fa fa-fa fa-spinner fa-pulse ml-2')} />
+						<i className={classnames('fa fa-fa fa-spinner fa-pulse ml-2')}/>
 					</span>
 				</div>
 			</Modal.Body>
 
 			<Modal.Footer>
-				<button type="button" className="btn btn-danger" onClick={handleClose}>
-					<i className="fa fa-fw fa-times mr-2" />
-					<span>{'Cancel'}</span>
-				</button>
-				<button type="button" className="btn btn-primary">
-					<i className="fa fa-fw fa-download mr-2" />
-					<span>{'Download File'}</span>
-				</button>
+				{procced ? (
+					<>
+						<a type="button" className="btn btn-primary btn-sm" href={url} download={true}
+						   target={'_blank'}>
+							<i className="fa fa-fw fa-download mr-2"/>
+							<span>{'Download File'}</span>
+						</a>
+						<a type="button" className="btn btn-primary btn-sm" href={audioUrl} download={true}
+						   target={'_blank'}>
+							<i className="fa fa-fw fa-file-audio mr-2"/>
+							<span>{'Download Audio'}</span>
+						</a>
+					</>
+				) : (
+					<button type="button" className="btn btn-danger btn-sm" onClick={handleClose}>
+						<i className="fa fa-fw fa-times mr-2"/>
+						<span>{'Cancel'}</span>
+					</button>
+				)}
 			</Modal.Footer>
 		</Modal>
 	);
@@ -88,12 +105,12 @@ const App: FC = () => {
 	const [procPercent, setProcPercent] = useState(0);
 	const [procced, setProcced] = useState(false);
 	const [uploaded, setUploaded] = useState(false);
-	const [source, setSource] = useState('en');
-	const [target, setTarget] = useState('tr');
+	const [source, setSource] = useState('tr');
+	const [target, setTarget] = useState('en');
 	const [modalOpen, setModalOpen] = useState(false);
 	const cancelSource = useRef<CancelTokenSource>();
 	const handleCloseModal = () => {
-		cancelSource.current?.cancel("Manually!");
+		cancelSource.current?.cancel('Manually!');
 		setLoading(false);
 		setProcced(false);
 		setUploaded(false);
@@ -103,13 +120,13 @@ const App: FC = () => {
 	}
 
 	const procProgressPercent = () => {
-		setTimeout(() => setProcPercent(15), 500);
-		setTimeout(() => setProcPercent(65), 1300);
-		setTimeout(() => setProcPercent(85), 1800);
-		setTimeout(() => {
-			setProcPercent(100);
-			setProcced(true);
-		}, 2300);
+		setTimeout(() => setProcPercent(15), 1000);
+		setTimeout(() => setProcPercent(65), 3000);
+		setTimeout(() => setProcPercent(85), 6000);
+		// setTimeout(() => {
+		// 	setProcPercent(100);
+		// 	setProcced(true);
+		// }, 2300);
 	}
 
 	const handleNull = (e: FormEvent<HTMLFormElement>) => {
@@ -135,11 +152,11 @@ const App: FC = () => {
 	}
 
 	const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-		if (e.target.name === "source") {
+		if (e.target.name === 'source') {
 			setSource(e.target.value);
 		}
 
-		if (e.target.name === "target") {
+		if (e.target.name === 'target') {
 			setTarget(e.target.value);
 		}
 	}
@@ -163,8 +180,10 @@ const App: FC = () => {
 		data.append('source', source);
 		data.append('target', target);
 
+		procProgressPercent();
+
 		axios.post(`http://127.0.0.1:3001/upload`, data, {
-			headers: { 'Accept': '*' },
+			headers: {'Accept': '*'},
 			onUploadProgress: handleProgress,
 			cancelToken: cancelSource.current.token,
 		})
@@ -185,12 +204,12 @@ const App: FC = () => {
 					console.log(file);
 				}
 
-				const link = document.createElement('a');
-				link.href = url;
-				link.setAttribute('download', `${filename}`);
-				document.body.append(link);
-				link.click();
-				link.parentNode?.removeChild(link);
+				// const link = document.createElement('a');
+				// link.href = url;
+				// link.setAttribute('download', `${filename}`);
+				// document.body.append(link);
+				// link.click();
+				// link.parentNode?.removeChild(link);
 			})
 			.catch(err => console.error(err));
 	}
@@ -198,7 +217,7 @@ const App: FC = () => {
 	return (
 		<>
 			<div className="container mt-5">
-				<a href="/" download={true} ref={downloadRef} />
+				<a href="/" download={true} ref={downloadRef}/>
 				<div className={'row'}>
 					<div className="col-8 offset-2">
 						<div className={'mt-2 mb-5 text-center'}>
@@ -213,9 +232,10 @@ const App: FC = () => {
 								<form onSubmit={handleNull}>
 									<div className="form-group row">
 										<label htmlFor="language"
-											className={'col-3 col-form-label'}>{'Source Language:'}</label>
+											   className={'col-3 col-form-label'}>{'Source Language:'}</label>
 										<div className="col-9">
-											<select className={'form-control'} value={source} onChange={handleSelectChange} name="source">
+											<select className={'form-control'} value={source}
+													onChange={handleSelectChange} name="source">
 												<option value="en" disabled={target == 'en'}>{'English'}</option>
 												<option value="de" disabled={target == 'de'}>{'German'}</option>
 												<option value="fr" disabled={target == 'fr'}>{'French'}</option>
@@ -226,9 +246,10 @@ const App: FC = () => {
 									</div>
 									<div className="form-group row">
 										<label htmlFor="language"
-											className={'col-3 col-form-label'}>{'Target Language:'}</label>
+											   className={'col-3 col-form-label'}>{'Target Language:'}</label>
 										<div className="col-9">
-											<select className={'form-control'} value={target} onChange={handleSelectChange} name="target">
+											<select className={'form-control'} value={target}
+													onChange={handleSelectChange} name="target">
 												<option value="en" disabled={source == 'en'}>{'English'}</option>
 												<option value="de" disabled={source == 'de'}>{'German'}</option>
 												<option value="fr" disabled={source == 'fr'}>{'French'}</option>
@@ -240,20 +261,23 @@ const App: FC = () => {
 									<div className="form-group row">
 										<label htmlFor="file" className={'col-3 col-form-label'}>{'File:'}</label>
 										<div className={'col-9'}>
-											<input ref={fileRef} className={'form-control-file'} onChange={handleFileChange} type="file" />
+											<input ref={fileRef} className={'form-control-file'}
+												   onChange={handleFileChange} type="file"/>
 										</div>
 									</div>
 								</form>
 							</div>
 							<div className="card-footer">
 								<div className="d-flex align-items-center justify-content-end">
-									<button className={'btn btn-warning mr-4 shadow-sm'} type={'button'} disabled={loading}>
-										<i className={classnames('fa fa-fw mr-2 fa-sync-alt')} />
+									<button className={'btn btn-warning mr-4 shadow-sm btn-sm'} type={'button'}
+											disabled={loading}>
+										<i className={classnames('fa fa-fw mr-2 fa-sync-alt')}/>
 										<span>{'Reset'}</span>
 									</button>
-									<button onClick={handleSubmit} className={'btn btn-success shadow-sm'} type={'button'}
-										disabled={loading}>
-										<i className={classnames('fa fa-fw mr-2 fa-upload')} />
+									<button onClick={handleSubmit} className={'btn btn-success shadow-sm btn-sm'}
+											type={'button'}
+											disabled={loading}>
+										<i className={classnames('fa fa-fw mr-2 fa-upload')}/>
 										<span>{'Submit'}</span>
 									</button>
 								</div>
@@ -269,6 +293,7 @@ const App: FC = () => {
 				procced={procced}
 				percent={percent}
 				uploaded={uploaded}
+				filename={filename}
 			/>
 		</>
 	);
